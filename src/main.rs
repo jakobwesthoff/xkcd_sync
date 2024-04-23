@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io::{BufReader, BufWriter};
 use std::path::{Path, PathBuf};
@@ -5,7 +6,6 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
-
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Xkcd {
@@ -94,7 +94,7 @@ fn main() -> Result<()> {
     let mut skipped = 0;
     for num in 1..=latest.num {
         let mut already_updated = false;
-        if let std::collections::hash_map::Entry::Vacant(e) = sync_state.entry(num) {
+        if let Entry::Vacant(e) = sync_state.entry(num) {
             println!("Fetching comic metadata #{num}");
             let json_url = build_json_url_for_num(num);
             match fetch_json(&json_url) {
