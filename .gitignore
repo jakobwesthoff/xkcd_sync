@@ -1,0 +1,4 @@
+/target
+/comics
+.DS_Store
+/xkcd_sync_state.json
