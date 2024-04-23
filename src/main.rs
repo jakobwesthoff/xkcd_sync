@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use ureq;
+
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Xkcd {
@@ -41,7 +41,7 @@ fn build_json_url_for_num(num: usize) -> String {
 }
 
 fn create_image_file_path(num: usize, comic_url: &str, comic_dir: &str) -> Result<PathBuf> {
-    let comic_file_name = comic_url.split("/").last().context(format!(
+    let comic_file_name = comic_url.split('/').last().context(format!(
         "extracting filename from image url {url}",
         url = comic_url
     ))?;
@@ -57,7 +57,7 @@ fn download_xkcd_image_to_dir(xkcd: &Xkcd, target_file: &Path) -> Result<()> {
         .context(format!("fetching {url}", url = xkcd.img))?
         .into_reader();
     let writer =
-        fs::File::create(&target_file).context(format!("open {target_file:?} for writing"))?;
+        fs::File::create(target_file).context(format!("open {target_file:?} for writing"))?;
 
     std::io::copy(&mut BufReader::new(img_reader), &mut BufWriter::new(writer)).context(
         format!(
@@ -93,17 +93,25 @@ fn main() -> Result<()> {
     let mut updated = 0;
     let mut skipped = 0;
     for num in 1..=latest.num {
-        if num == 404 {
-            println!("Haha comic 404 does not exist. Very funny ;). Just skipping it.");
-            continue;
-        }
         let mut already_updated = false;
-        if !sync_state.contains_key(&num) {
+        if let std::collections::hash_map::Entry::Vacant(e) = sync_state.entry(num) {
             println!("Fetching comic metadata #{num}");
-            let xkcd = fetch_json(&build_json_url_for_num(num))?;
-            sync_state.insert(num, xkcd);
-            updated += 1;
-            already_updated = true;
+            let json_url = build_json_url_for_num(num);
+            match fetch_json(&json_url) {
+                Ok(xkcd) => {
+                    e.insert(xkcd);
+                    updated += 1;
+                    already_updated = true;
+                }
+                Err(error) => {
+                    println!(
+                        "Error retrieving metadata for #{num}: {err}",
+                        err = error.root_cause()
+                    );
+                    println!("Note: Skipping #{num} as it will be retieved next time.");
+                    continue;
+                }
+            }
         }
         let xkcd = sync_state.get(&num).unwrap();
 
@@ -115,9 +123,20 @@ fn main() -> Result<()> {
             skipped += 1;
         } else {
             println!("Fetching comic image #{num}");
-            download_xkcd_image_to_dir(&xkcd, &comic_target_path)?;
-            if !already_updated {
-                updated += 1;
+            match download_xkcd_image_to_dir(xkcd, &comic_target_path) {
+                Ok(_) => {
+                    if !already_updated {
+                        updated += 1;
+                    }
+                }
+                Err(error) => {
+                    println!(
+                        "Error retrieving image for #{num}: {err}",
+                        err = error.root_cause()
+                    );
+                    println!("Note: Skipping #{num} as it will be retieved next time.");
+                    continue;
+                }
             }
         }
 
