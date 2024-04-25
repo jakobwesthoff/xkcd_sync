@@ -40,13 +40,13 @@ impl ProgressBar {
             .replace("{description}", description);
 
         let progress_len = if cols as usize <= preprocessed_template.len() - 10 {
-            2
+            0
         } else {
             cols as usize - (preprocessed_template.len() - 10)
         };
 
         let mut progress = String::new();
-        let full_char_with_fraction = percentage / 100f32 * progress_len as f32 - 2f32;
+        let full_char_with_fraction = percentage / 100f32 * progress_len as f32;
         let full_char_num = full_char_with_fraction.floor();
 
         for _ in 0..full_char_num as usize {
@@ -68,7 +68,7 @@ impl ProgressBar {
             progress.push(self.full_chars[fraction_index]);
         }
 
-        for _ in 0..progress_len - 2 - full_char_num as usize - fraction_render_offset {
+        for _ in 0..progress_len - full_char_num as usize - fraction_render_offset {
             progress.push(self.empty_char);
         }
 
