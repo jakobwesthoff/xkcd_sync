@@ -90,7 +90,11 @@ fn main() -> Result<()> {
         Err(_) => SyncState::new(),
     };
 
-    let pb = ProgressBar::new();
+    let pb = ProgressBar {
+        full_chars: Vec::from(cli_progress::UNICODE_BAR_FULL_CHARS),
+        empty_char: ' ',
+        ..ProgressBar::default()
+    };
 
     pb.update(0f32, "Fetching latest comic information...")?;
 
