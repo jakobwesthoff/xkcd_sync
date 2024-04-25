@@ -92,7 +92,7 @@ fn main() -> Result<()> {
 
     let pb = ProgressBar::new();
 
-    pb.update(0, "Fetching latest comic information...");
+    pb.update(0f32, "Fetching latest comic information...")?;
 
     let lastest_url = "https://xkcd.com/info.0.json";
     let latest = fetch_json(lastest_url)?;
@@ -103,9 +103,9 @@ fn main() -> Result<()> {
         let mut already_updated = false;
         if let Entry::Vacant(e) = sync_state.entry(num) {
             pb.update(
-                (num as f32 / latest.num as f32 * 100.0).floor() as usize,
+                num as f32 / latest.num as f32 * 100f32,
                 &format!("Fetching comic metadata #{num}"),
-            );
+            )?;
             let json_url = build_json_url_for_num(num);
             match fetch_json(&json_url) {
                 Ok(xkcd) => {
@@ -133,9 +133,9 @@ fn main() -> Result<()> {
             skipped += 1;
         } else {
             pb.update(
-                (num as f32 / latest.num as f32 * 100.0).floor() as usize,
+                num as f32 / latest.num as f32 * 100f32,
                 &format!("Fetching comic image #{num}"),
-            );
+            )?;
             match download_xkcd_image_to_dir(xkcd, &comic_target_path) {
                 Ok(_) => {
                     if !already_updated {
@@ -155,9 +155,9 @@ fn main() -> Result<()> {
 
         if updated > 0 && updated % 50 == 0 {
             pb.update(
-                (num as f32 / latest.num as f32 * 100.0).floor() as usize,
+                num as f32 / latest.num as f32 * 100f32,
                 &format!("Saving sync state to {file}", file = sync_state_file),
-            );
+            )?;
             let file = fs::File::create(sync_state_file)
                 .context(format!("open {file} for writing", file = sync_state_file))?;
             serde_json::to_writer(BufWriter::new(file), &sync_state)
