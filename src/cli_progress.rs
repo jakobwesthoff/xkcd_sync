@@ -30,10 +30,13 @@ impl ProgressBar {
 
         let mut progress = String::new();
         progress.push(DEFAULT_START_CHAR);
-        for _ in 0..(percentage / 100.0 * cols as f32).floor() as usize {
+        for _ in 0..(percentage / 100f32 * progress_len as f32 - 2f32).floor() as usize {
             progress.push(DEFAULT_FULL_CHAR);
         }
-        for _ in 0..progress_len - 2 - (percentage / 100.0 * cols as f32).floor() as usize {
+        for _ in 0..progress_len
+            - 2
+            - (percentage / 100f32 * (progress_len as f32 - 2f32) as f32).floor() as usize
+        {
             progress.push(DEFAULT_EMPTY_CHAR);
         }
         progress.push(DEFAULT_END_CHAR);
